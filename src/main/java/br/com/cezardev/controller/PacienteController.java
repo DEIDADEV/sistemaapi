@@ -14,38 +14,36 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-
-import br.com.cezardev.dto.UsuarioDTO;
-import br.com.cezardev.service.UsuarioService;
+import br.com.cezardev.dto.PacienteDTO;
+import br.com.cezardev.service.PacienteService;
 
 @RestController
-@RequestMapping("/usuario")
+@RequestMapping("/paciente")
 @CrossOrigin
-public class UsuarioController {
+public class PacienteController {
 	
 	@Autowired
-	private UsuarioService usuarioService;
+	private PacienteService pacienteService;
 	
 	@GetMapping
-	public List<UsuarioDTO> listarTodos() {
-		return usuarioService.listarTodos();
+	public List<PacienteDTO> listarTodos() {
+		return pacienteService.listarTodos();
 	}
 	
 	@PostMapping
-	public void inserir(@RequestBody UsuarioDTO usuario) {
-		usuarioService.inserir(usuario);
+	public void inserir(@RequestBody PacienteDTO paciente) {
+		pacienteService.inserir(paciente);
 	}
 	
 	@PutMapping
-	public UsuarioDTO alterar(@RequestBody UsuarioDTO usuario) {
-		return usuarioService.alterar(usuario);
+	public PacienteDTO alterar(@RequestBody PacienteDTO paciente) {
+		return pacienteService.alterar(paciente);
 	}
 	
-	//http://endereco/usuario/3
 	@DeleteMapping("/{id}")
 	public ResponseEntity<Void> excluir(@PathVariable Long id) {
-		usuarioService.excluir(id);
+		pacienteService.excluir(id);
 		return ResponseEntity.ok().build();
 	}
-	
+
 }

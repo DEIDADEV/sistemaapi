@@ -2,7 +2,7 @@ package br.com.cezardev.entity;
 
 import org.springframework.beans.BeanUtils;
 
-import br.com.cezardev.dto.PerfilDTO;
+import br.com.cezardev.dto.MedicoDTO;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -15,22 +15,27 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name= "PERFIL")
+@Table(name= "MEDICO")
 @Getter
 @Setter
 @NoArgsConstructor
 @EqualsAndHashCode(of = "id")
-public class PerfilEntity {
+public class MedicoEntity {
 	
 	@Id
-	@GeneratedValue(strategy = GenerationType.AUTO)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 	
 	@Column(nullable = false)
-	private String descricao;
+	private String nome;
 	
-	public PerfilEntity(PerfilDTO perfil) {
-		BeanUtils.copyProperties(perfil, this);
+	@Column(nullable = false, unique = true)
+	private String crm;
+	
+	private String especialidade;
+	
+	public MedicoEntity(MedicoDTO medico) {
+		BeanUtils.copyProperties(medico, this);
 	}
 
 }
