@@ -1,82 +1,98 @@
 package br.com.cezardev.service;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import br.com.cezardev.dto.ConsultaDTO;
+import br.com.cezardev.dto.ConsultaResponseDTO;
 import br.com.cezardev.entity.ConsultaEntity;
 import br.com.cezardev.entity.MedicoEntity;
 import br.com.cezardev.entity.PacienteEntity;
 import br.com.cezardev.repository.ConsultaRepository;
 import br.com.cezardev.repository.MedicoRepository;
 import br.com.cezardev.repository.PacienteRepository;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ConsultaService {
 
-    @Autowired
-    private ConsultaRepository consultaRepository;
+    private final ConsultaRepository consultaRepository;
+    private final MedicoRepository medicoRepository;
+    private final PacienteRepository pacienteRepository;
 
-    @Autowired
-    private MedicoRepository medicoRepository;
-
-    @Autowired
-    private PacienteRepository pacienteRepository;
-
-    // Listar todas as consultas
-    public List<ConsultaDTO> listarTodos() {
-        return consultaRepository.findAll()
-                .stream()
-                .map(ConsultaDTO::new)
-                .collect(Collectors.toList());
+    public ConsultaService(ConsultaRepository consultaRepository,
+                           MedicoRepository medicoRepository,
+                           PacienteRepository pacienteRepository) {
+        this.consultaRepository = consultaRepository;
+        this.medicoRepository = medicoRepository;
+        this.pacienteRepository = pacienteRepository;
     }
 
-    // Buscar por ID
-    public ConsultaDTO buscarPorId(Long id) {
-        ConsultaEntity entity = consultaRepository.findById(id)
+    // Método existente para inserir nova consulta
+    public ConsultaResponseDTO inserir(ConsultaDTO dto) {
+        ConsultaEntity entity = new ConsultaEntity();
+
+        MedicoEntity medico = medicoRepository.findById(dto.getMedicoId())
+                .orElseThrow(() -> new RuntimeException("Médico não encontrado"));
+        PacienteEntity paciente = pacienteRepository.findById(dto.getPacienteId())
+                .orElseThrow(() -> new RuntimeException("Paciente não encontrado"));
+
+        // ======= VALIDAÇÃO: impedir consulta no mesmo dia e horário =======
+        boolean existeConsulta = consultaRepository.existsByMedicoAndDataAndHorario(
+                medico, dto.getData(), dto.getHorario()
+        );
+        if (existeConsulta) {
+            throw new RuntimeException("Já existe uma consulta agendada para este médico nesse dia e horário.");
+        }
+        // ==================================================================
+
+        entity.setMedico(medico);
+        entity.setPaciente(paciente);
+        entity.setData(dto.getData());
+        entity.setHorario(dto.getHorario());
+        entity.setStatus(dto.getStatus());
+
+        consultaRepository.save(entity);
+
+        ConsultaResponseDTO response = new ConsultaResponseDTO();
+        response.setId(entity.getId());
+        response.setMedicoNome(medico.getNome());
+        response.setPacienteNome(paciente.getNome());
+        response.setData(entity.getData().toString());
+        response.setHorario(entity.getHorario().toString());
+        response.setStatus(entity.getStatus());
+        return response;
+    }
+
+    // Método existente para listar todas as consultas
+    public List<ConsultaResponseDTO> listarTodos() {
+        return consultaRepository.findAll().stream().map(entity -> {
+            ConsultaResponseDTO dto = new ConsultaResponseDTO();
+            dto.setId(entity.getId());
+            dto.setMedicoNome(entity.getMedico().getNome());
+            dto.setPacienteNome(entity.getPaciente().getNome());
+            dto.setData(entity.getData().toString());
+            dto.setHorario(entity.getHorario().toString());
+            dto.setStatus(entity.getStatus());
+            return dto;
+        }).collect(Collectors.toList());
+    }
+
+    // NOVO MÉTODO: atualizar apenas o status de uma consulta
+    public ConsultaResponseDTO atualizarStatus(Long id, String novoStatus) {
+        ConsultaEntity consulta = consultaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Consulta não encontrada"));
-        return new ConsultaDTO(entity);
-    }
 
-    // Inserir nova consulta
-    public ConsultaDTO inserir(ConsultaDTO dto) {
-        MedicoEntity medico = medicoRepository.findById(dto.getMedicoId())
-                .orElseThrow(() -> new RuntimeException("Médico não encontrado: " + dto.getMedicoId()));
+        consulta.setStatus(novoStatus);
+        consultaRepository.save(consulta);
 
-        PacienteEntity paciente = pacienteRepository.findById(dto.getPacienteId())
-                .orElseThrow(() -> new RuntimeException("Paciente não encontrado: " + dto.getPacienteId()));
-
-        ConsultaEntity entity = new ConsultaEntity(dto, medico, paciente);
-
-        return new ConsultaDTO(consultaRepository.save(entity));
-    }
-
-    // Alterar consulta existente
-    public ConsultaDTO alterar(ConsultaDTO dto) {
-        if (dto.getId() == null || !consultaRepository.existsById(dto.getId())) {
-            throw new RuntimeException("Consulta não encontrada para alteração");
-        }
-
-        MedicoEntity medico = medicoRepository.findById(dto.getMedicoId())
-                .orElseThrow(() -> new RuntimeException("Médico não encontrado: " + dto.getMedicoId()));
-
-        PacienteEntity paciente = pacienteRepository.findById(dto.getPacienteId())
-                .orElseThrow(() -> new RuntimeException("Paciente não encontrado: " + dto.getPacienteId()));
-
-        ConsultaEntity entity = new ConsultaEntity(dto, medico, paciente);
-        entity.setId(dto.getId()); // manter o ID para atualização
-
-        return new ConsultaDTO(consultaRepository.save(entity));
-    }
-
-    // Excluir consulta
-    public void excluir(Long id) {
-        if (!consultaRepository.existsById(id)) {
-            throw new RuntimeException("Consulta não encontrada para exclusão");
-        }
-        consultaRepository.deleteById(id);
+        ConsultaResponseDTO dto = new ConsultaResponseDTO();
+        dto.setId(consulta.getId());
+        dto.setMedicoNome(consulta.getMedico().getNome());
+        dto.setPacienteNome(consulta.getPaciente().getNome());
+        dto.setData(consulta.getData().toString());
+        dto.setHorario(consulta.getHorario().toString());
+        dto.setStatus(consulta.getStatus());
+        return dto;
     }
 }

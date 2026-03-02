@@ -1,36 +1,56 @@
 package br.com.cezardev.controller;
 
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
-
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import br.com.cezardev.dto.MedicoDTO;
 import br.com.cezardev.service.MedicoService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
-@RequestMapping("/medico")
+@RequestMapping("/api/medicos")
 @CrossOrigin
 public class MedicoController {
-	
-	@Autowired
-	private MedicoService medicoService;
-	
-	@GetMapping
-    public ResponseEntity<List<MedicoDTO>> listarTodos() {
-        List<MedicoDTO> medicos = medicoService.listarTodos();
-        return ResponseEntity.ok(medicos);
+
+    private final MedicoService service;
+
+    public MedicoController(MedicoService service) {
+        this.service = service;
     }
 
-	@PostMapping
-	public void inserir(@RequestBody MedicoDTO medico) {
-		medicoService.inserir(medico);
-	}
+    // Listar todos os médicos
+    @GetMapping
+    public List<MedicoDTO> listarTodos() {
+        return service.listarTodos();
+    }
+
+    // Inserir novo médico
+    @PostMapping
+    public ResponseEntity<MedicoDTO> inserir(@RequestBody MedicoDTO dto) {
+        MedicoDTO criado = service.inserir(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(criado);
+    }
+
+    // Atualizar médico existente
+    @PutMapping("/{id}")
+    public ResponseEntity<MedicoDTO> atualizar(@PathVariable Long id, @RequestBody MedicoDTO dto) {
+        try {
+            MedicoDTO atualizado = service.atualizar(id, dto);
+            return ResponseEntity.ok(atualizado);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
+
+    // Excluir médico
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> excluir(@PathVariable Long id) {
+        try {
+            service.excluir(id);
+            return ResponseEntity.noContent().build(); // 204 No Content
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
 }

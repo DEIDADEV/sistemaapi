@@ -1,25 +1,18 @@
 package br.com.cezardev.repository;
 
+import org.springframework.data.jpa.repository.JpaRepository;
+import br.com.cezardev.entity.ConsultaEntity;
+import br.com.cezardev.entity.MedicoEntity;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+public interface ConsultaRepository extends JpaRepository<ConsultaEntity, Long> {
 
-import br.com.cezardev.entity.ConsultaEntity;
-import br.com.cezardev.entity.MedicoEntity;
+    List<ConsultaEntity> findByMedicoId(Long medicoId);
+    List<ConsultaEntity> findByPacienteId(Long pacienteId);
 
-public interface ConsultaRepository extends JpaRepository<ConsultaEntity, Long>{
-	
-	boolean existsByMedicoAndDataAndHorario(
-            MedicoEntity medico,
-            LocalDate data,
-            LocalTime horario
-    );
-
-    List<ConsultaEntity> findByMedicoAndData(
-            MedicoEntity medico,
-            LocalDate data
-    );
-
+    // Alterado para aceitar MedicoEntity diretamente
+    boolean existsByMedicoAndDataAndHorario(MedicoEntity medico, LocalDate data, LocalTime horario);
 }

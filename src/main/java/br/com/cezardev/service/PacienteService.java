@@ -1,42 +1,76 @@
 package br.com.cezardev.service;
 
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import br.com.cezardev.dto.PacienteDTO;
 import br.com.cezardev.entity.PacienteEntity;
 import br.com.cezardev.repository.PacienteRepository;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class PacienteService {
-	
-	@Autowired
-	private PacienteRepository pacienteRepository;
-	
-	public List<PacienteDTO> listarTodos() {
-		List<PacienteEntity> pacientes = pacienteRepository.findAll();
-		return pacientes.stream().map(PacienteDTO::new).toList();
-	}
-	
-	public void inserir(PacienteDTO paciente) {
-		PacienteEntity perfilEntity = new PacienteEntity(paciente);
-		pacienteRepository.save(perfilEntity);
-	}
-	
-	public PacienteDTO alterar(PacienteDTO paciente) {
-		PacienteEntity perfilEntity = new PacienteEntity(paciente);
-		return new PacienteDTO(pacienteRepository.save(perfilEntity));
-	}
-	
-	public void excluir (Long id) {
-		PacienteEntity paciente = pacienteRepository.findById(id).get();
-		pacienteRepository.delete(paciente);
-	}
-	
-	public PacienteDTO buscarPorId(Long id) {
-		return new PacienteDTO(pacienteRepository.findById(id).get());
-	}
 
+    private final PacienteRepository pacienteRepository;
+
+    public PacienteService(PacienteRepository pacienteRepository) {
+        this.pacienteRepository = pacienteRepository;
+    }
+
+    // ============================
+    // LISTAR TODOS
+    // ============================
+    public List<PacienteDTO> listarTodos() {
+        List<PacienteEntity> pacientes = pacienteRepository.findAll();
+        return pacientes.stream()
+                .map(PacienteDTO::new)
+                .toList();
+    }
+
+    // ============================
+    // INSERIR
+    // ============================
+    public PacienteDTO inserir(PacienteDTO dto) {
+        PacienteEntity entity = new PacienteEntity(dto);
+        pacienteRepository.save(entity);
+        return new PacienteDTO(entity);
+    }
+
+    // ============================
+    // ATUALIZAR
+    // ============================
+    public PacienteDTO atualizar(Long id, PacienteDTO dto) {
+
+        PacienteEntity paciente = pacienteRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Paciente não encontrado"));
+
+        paciente.setNome(dto.getNome());
+        paciente.setCpf(dto.getCpf());
+        paciente.setDataNascimento(dto.getDataNascimento());
+
+        pacienteRepository.save(paciente);
+
+        return new PacienteDTO(paciente);
+    }
+
+    // ============================
+    // EXCLUIR
+    // ============================
+    public void excluir(Long id) {
+
+        PacienteEntity paciente = pacienteRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Paciente não encontrado"));
+
+        pacienteRepository.delete(paciente);
+    }
+
+    // ============================
+    // BUSCAR POR ID
+    // ============================
+    public PacienteDTO buscarPorId(Long id) {
+
+        PacienteEntity paciente = pacienteRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Paciente não encontrado"));
+
+        return new PacienteDTO(paciente);
+    }
 }

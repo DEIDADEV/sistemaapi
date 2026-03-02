@@ -1,49 +1,38 @@
 package br.com.cezardev.controller;
 
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import br.com.cezardev.dto.ConsultaDTO;
+import br.com.cezardev.dto.ConsultaResponseDTO;
+import br.com.cezardev.service.ConsultaService;
 import org.springframework.web.bind.annotation.*;
 
-import br.com.cezardev.dto.ConsultaDTO;
-import br.com.cezardev.service.ConsultaService;
+import java.util.List;
 
 @RestController
-@RequestMapping("/api/consultas")
-@CrossOrigin(origins = "*") // libera acesso para front-end local
+@RequestMapping("api/consultas")
+@CrossOrigin
 public class ConsultaController {
 
-    @Autowired
-    private ConsultaService consultaService;
+    private final ConsultaService service;
 
-    // Listar todas
-    @GetMapping
-    public List<ConsultaDTO> listarTodos() {
-        return consultaService.listarTodos();
+    public ConsultaController(ConsultaService service) {
+        this.service = service;
     }
 
-    // Buscar por ID
-    @GetMapping("/{id}")
-    public ConsultaDTO buscarPorId(@PathVariable Long id) {
-        return consultaService.buscarPorId(id);
-    }
-
-    // Inserir nova consulta
+    // Endpoint existente: criar nova consulta
     @PostMapping
-    public ConsultaDTO inserir(@RequestBody ConsultaDTO dto) {
-        return consultaService.inserir(dto);
+    public ConsultaResponseDTO inserir(@RequestBody ConsultaDTO dto) {
+        return service.inserir(dto);
     }
 
-    // Alterar consulta
-    @PutMapping("/{id}")
-    public ConsultaDTO alterar(@PathVariable Long id, @RequestBody ConsultaDTO dto) {
-        dto.setId(id);
-        return consultaService.alterar(dto);
+    // Endpoint existente: listar todas as consultas
+    @GetMapping
+    public List<ConsultaResponseDTO> listarTodos() {
+        return service.listarTodos();
     }
 
-    // Excluir consulta
-    @DeleteMapping("/{id}")
-    public void excluir(@PathVariable Long id) {
-        consultaService.excluir(id);
+    // NOVO ENDPOINT: atualizar status de uma consulta
+    @PatchMapping("/{id}/status")
+    public ConsultaResponseDTO atualizarStatus(@PathVariable Long id, @RequestParam String status) {
+        return service.atualizarStatus(id, status);
     }
 }
