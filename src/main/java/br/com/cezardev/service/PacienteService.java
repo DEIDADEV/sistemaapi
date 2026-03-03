@@ -3,7 +3,9 @@ package br.com.cezardev.service;
 import br.com.cezardev.dto.PacienteDTO;
 import br.com.cezardev.entity.PacienteEntity;
 import br.com.cezardev.repository.PacienteRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -20,8 +22,8 @@ public class PacienteService {
     // LISTAR TODOS
     // ============================
     public List<PacienteDTO> listarTodos() {
-        List<PacienteEntity> pacientes = pacienteRepository.findAll();
-        return pacientes.stream()
+        return pacienteRepository.findAll()
+                .stream()
                 .map(PacienteDTO::new)
                 .toList();
     }
@@ -30,8 +32,21 @@ public class PacienteService {
     // INSERIR
     // ============================
     public PacienteDTO inserir(PacienteDTO dto) {
+
+        String cpfLimpo = limparCpf(dto.getCpf());
+
+        if (pacienteRepository.findByCpf(cpfLimpo).isPresent()) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Já existe um cadastro com o CPF informado."
+            );
+        }
+
+        dto.setCpf(cpfLimpo);
+
         PacienteEntity entity = new PacienteEntity(dto);
         pacienteRepository.save(entity);
+
         return new PacienteDTO(entity);
     }
 
@@ -41,10 +56,27 @@ public class PacienteService {
     public PacienteDTO atualizar(Long id, PacienteDTO dto) {
 
         PacienteEntity paciente = pacienteRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Paciente não encontrado"));
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Paciente não encontrado"
+                        )
+                );
+
+        String cpfLimpo = limparCpf(dto.getCpf());
+
+        pacienteRepository.findByCpf(cpfLimpo)
+                .ifPresent(p -> {
+                    if (!p.getId().equals(id)) {
+                        throw new ResponseStatusException(
+                                HttpStatus.CONFLICT,
+                                "Já existe um cadastro com o CPF informado."
+                        );
+                    }
+                });
 
         paciente.setNome(dto.getNome());
-        paciente.setCpf(dto.getCpf());
+        paciente.setCpf(cpfLimpo);
         paciente.setDataNascimento(dto.getDataNascimento());
 
         pacienteRepository.save(paciente);
@@ -58,7 +90,12 @@ public class PacienteService {
     public void excluir(Long id) {
 
         PacienteEntity paciente = pacienteRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Paciente não encontrado"));
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Paciente não encontrado"
+                        )
+                );
 
         pacienteRepository.delete(paciente);
     }
@@ -69,8 +106,20 @@ public class PacienteService {
     public PacienteDTO buscarPorId(Long id) {
 
         PacienteEntity paciente = pacienteRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Paciente não encontrado"));
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Paciente não encontrado"
+                        )
+                );
 
         return new PacienteDTO(paciente);
+    }
+
+    // ============================
+    // MÉTODO AUXILIAR
+    // ============================
+    private String limparCpf(String cpf) {
+        return cpf.replaceAll("\\D", "");
     }
 }
